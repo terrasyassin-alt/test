@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Système de génération des attestations</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Librairies -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://unpkg.com/pizzip@3.1.7/dist/pizzip.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/docxtemplater/3.42.3/docxtemplater.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+</head>
+
+<body>
+<div class="container">
+
+    <!-- ===== En-tête ===== -->
+    <header>
+        <h1>🎓 Système de génération des attestations</h1>
+        <p class="subtitle">
+            Le modèle Word est chargé automatiquement — importez uniquement le fichier Excel
+        </p>
+    </header>
+
+    <!-- ===== Étape 1 : Modèle Word ===== -->
+    <div class="card">
+        <div class="step">
+            <div class="step-number">1</div>
+            <h2>Modèle de l’attestation</h2>
+        </div>
+
+        <div class="upload-section">
+            <div class="upload-label success">
+                <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span id="template-label">
+                    Le modèle est chargé automatiquement
+                </span>
+            </div>
+
+            <div id="template-info" class="file-info">
+                <div class="file-details">
+                    <strong>Nom du modèle :</strong>
+                    <span id="template-filename">Att NoteClinique.docx</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Étape 2 : Fichier Excel ===== -->
+    <div class="card">
+        <div class="step">
+            <div class="step-number">2</div>
+            <h2>Importer le fichier Excel</h2>
+        </div>
+
+        <div class="upload-section">
+            <label for="excel_file" class="upload-label">
+                <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <span id="file-label">
+                    Choisir un fichier Excel (.xlsx ou .xls)
+                </span>
+                <input type="file" id="excel_file" accept=".xlsx,.xls" hidden>
+            </label>
+
+            <div id="file-info" class="file-info" style="display:none;">
+                <div class="file-details">
+                    <strong>Fichier :</strong> <span id="filename"></span><br>
+                    <strong>Nombre d’enregistrements :</strong> <span id="rows-count"></span>
+                </div>
+                <button onclick="clearExcel()" class="btn-secondary btn-small">
+                    Supprimer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Étape 3 : CNE ===== -->
+    <div class="card">
+        <div class="step">
+            <div class="step-number">3</div>
+            <h2>Saisir le CNE</h2>
+        </div>
+
+        <div class="input-section">
+            <input
+                type="text"
+                id="cne_input"
+                class="cne-input"
+                placeholder="Entrez le CNE de l’étudiant"
+            >
+
+            <button onclick="generateDocument()" class="btn-primary" id="generate-btn">
+                Générer l’attestation
+            </button>
+        </div>
+    </div>
+
+    <!-- ===== Messages ===== -->
+    <div id="alert-box" class="alert" style="display:none;"></div>
+
+    <!-- ===== Résultat ===== -->
+    <div id="result-section" class="card result-card" style="display:none;">
+        <div class="success-icon">✓</div>
+        <h3>Attestation générée avec succès</h3>
+        <p id="student-name"></p>
+        <p class="download-info">
+            Le fichier sera téléchargé automatiquement
+        </p>
+    </div>
+
+    <!-- ===== Chargement ===== -->
+    <div id="loading" class="loading" style="display:none;">
+        <div class="spinner"></div>
+        <p>Traitement en cours...</p>
+    </div>
+
+</div>
+
+<footer>
+    <p>© 2025 — Système de génération des attestations</p>
+    <p class="tech-info">
+        Fonctionne entièrement dans le navigateur
+    </p>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>

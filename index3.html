@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attestation de Fin d'Études</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/docxtemplater/3.42.3/docxtemplater.js"></script>
+    <script src="https://unpkg.com/pizzip@3.1.7/dist/pizzip.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f8fafc;
+            color: #0f172a;
+            line-height: 1.6;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 950px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: white;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            margin-bottom: 24px;
+        }
+
+        .back-button:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+        }
+
+        .header-title {
+            font-size: 40px;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -1px;
+            margin-bottom: 12px;
+        }
+
+        .header-gradient {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-subtitle {
+            font-size: 16px;
+            color: #64748b;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+               background: #eff6ff;
+            border: 1px solid #dbeafe;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 24px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #0f172a;
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .file-upload {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .file-upload:last-child {
+            margin-bottom: 0;
+        }
+
+        .file-upload-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 14px 20px;
+            background: white;
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            color: #475569;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .file-upload-btn:hover {
+            border-color: #3b82f6;
+            background: #f8fafc;
+            color: #3b82f6;
+        }
+
+        .file-icon {
+            font-size: 20px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-name {
+            margin-top: 12px;
+            padding: 10px 14px;
+            background: #eff6ff;
+            border: 1px solid #dbeafe;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #1e40af;
+            display: none;
+        }
+
+        .file-name.active {
+            display: block;
+        }
+
+        .file-name::before {
+            content: '✓ ';
+            font-weight: 700;
+            margin-right: 6px;
+        }
+
+        
+        .warning-box {
+            display: none;
+            background: #fef3c7;
+            border: 1px solid #fde68a;
+            border-left: 4px solid #f59e0b;
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+        }
+
+        .warning-box.active {
+            display: block;
+        }
+
+        .warning-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #92400e;
+            margin-bottom: 12px;
+        }
+
+        .warning-list {
+            list-style-position: inside;
+            color: #92400e;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .btn-generate {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 16px;
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+            box-shadow: 0 4px 12px rgba(30, 64, 175, 0.2);
+        }
+
+        .btn-generate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(30, 64, 175, 0.3);
+        }
+
+        .btn-generate:active {
+            transform: translateY(0);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            margin-top: 24px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #e2e8f0;
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 15px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .status {
+            display: none;
+            padding: 16px 20px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 500;
+            margin-top: 24px;
+        }
+
+        .status.success {
+            display: block;
+            background: #dcfce7;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+        }
+
+        .status.error {
+            display: block;
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 32px 20px;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 20px 16px;
+            }
+
+            .header-title {
+                font-size: 32px;
+            }
+
+            .card {
+                padding: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="index.html" class="back-button">
+                <span>←</span>
+                <span>Retour</span>
+            </a>
+            <h1 class="header-title">
+                Attestation de <span class="header-gradient">Fin d'Études</span>
+            </h1>
+            <p class="header-subtitle">Génération automatique des attestations depuis fichier Excel</p>
+        </div>
+
+        
+
+        <div class="card">
+            <h2 class="card-title">Informations de l'étudiant</h2>
+            <div class="form-group">
+                <label class="form-label" for="cne">Code National de l'Étudiant (CNE)</label>
+                <input type="text" id="cne" class="form-input" placeholder="Entrez le CNE de l'étudiant">
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 class="card-title">Fichiers requis</h2>
+            
+            <div class="form-group">
+                <label class="form-label">Fichier des Stages</label>
+                <div class="file-upload">
+                    <label for="stagesFile" class="file-upload-btn">
+                        <span class="file-icon">📊</span>
+                        <span>Sélectionner le fichier Excel des STAGES</span>
+                    </label>
+                    <input type="file" id="stagesFile" accept=".xlsx,.xls">
+                    <div id="stagesFileName" class="file-name"></div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Fichier des Examens</label>
+                <div class="file-upload">
+                    <label for="examensFile" class="file-upload-btn">
+                        <span class="file-icon">📝</span>
+                        <span>Sélectionner le fichier Excel des EXAMENS</span>
+                    </label>
+                    <input type="file" id="examensFile" accept=".xlsx,.xls">
+                    <div id="examensFileName" class="file-name"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="warningList" class="warning-box">
+            <div class="warning-title">⚠️ Avertissements détectés</div>
+            <ul id="warningItems" class="warning-list"></ul>
+        </div>
+
+        <button class="btn-generate" onclick="generateAttestation()">
+            <span>Générer l'Attestation</span>
+            <span>→</span>
+        </button>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p class="loading-text">Traitement des données en cours...</p>
+        </div>
+
+        <div id="status" class="status"></div>
+
+        <div class="footer">
+            © 2026 - Système de Génération d'Attestations
+        </div>
+    </div>
+
+    <script>
+        // File selection handlers
+        document.getElementById('stagesFile').addEventListener('change', function(e) {
+            const fileName = e.target.files[0]?.name || '';
+            const display = document.getElementById('stagesFileName');
+            if (fileName) {
+                display.textContent = fileName;
+                display.classList.add('active');
+            }
+        });
+
+        document.getElementById('examensFile').addEventListener('change', function(e) {
+            const fileName = e.target.files[0]?.name || '';
+            const display = document.getElementById('examensFileName');
+            if (fileName) {
+                display.textContent = fileName;
+                display.classList.add('active');
+            }
+        });
+
+        const TEMPLATE_PATH = 'Attestation Fin Etude - yassine.docx';
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = 'status ' + type;
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').classList.toggle('active', show);
+        }
+
+        function formatDate(value) {
+            if (!value) return '';
+            const date = new Date(value);
+            if (isNaN(date.getTime())) return '';
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+
+        function getStageColumns(columns, stageName) {
+            stageName = stageName.toLowerCase();
+            let colDebut = null;
+            let colFin = null;
+            
+            columns.forEach(col => {
+                const name = col.toLowerCase().replace(/\s+/g, '_');
+                if (name.includes(stageName) && name.includes('debut')) {
+                    colDebut = col;
+                }
+                if (name.includes(stageName) && name.includes('fin')) {
+                    colFin = col;
+                }
+            });
+            
+            return { debut: colDebut, fin: colFin };
+        }
+
+        async function readExcelFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        resolve(workbook);
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                reader.onerror = reject;
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        async function generateAttestation() {
+            const cne = document.getElementById('cne').value.trim().toUpperCase();
+            const stagesFile = document.getElementById('stagesFile').files[0];
+            const examensFile = document.getElementById('examensFile').files[0];
+
+            if (!cne) {
+                showStatus('⚠️ Veuillez entrer le CNE de l\'étudiant', 'error');
+                return;
+            }
+
+            if (!stagesFile || !examensFile) {
+                showStatus('⚠️ Veuillez sélectionner tous les fichiers requis', 'error');
+                return;
+            }
+
+            showLoading(true);
+            document.getElementById('warningList').classList.remove('active');
+            document.getElementById('status').classList.remove('success', 'error');
+
+            try {
+                const stagesWorkbook = await readExcelFile(stagesFile);
+                const stagesSheet = stagesWorkbook.Sheets[stagesWorkbook.SheetNames[0]];
+                const stagesData = XLSX.utils.sheet_to_json(stagesSheet, { header: 1 });
+
+                const headers = stagesData[0];
+                const subHeaders = stagesData[1];
+                const newColumns = [];
+                let mainTitle = null;
+
+                for (let i = 0; i < headers.length; i++) {
+                    if (headers[i]) mainTitle = headers[i];
+                    if (mainTitle && subHeaders[i]) {
+                        newColumns.push(`${mainTitle} - ${subHeaders[i]}`);
+                    } else if (subHeaders[i]) {
+                        newColumns.push(subHeaders[i]);
+                    }
+                }
+
+                const stagesRows = stagesData.slice(2).map(row => {
+                    const obj = {};
+                    newColumns.forEach((col, idx) => {
+                        obj[col] = row[idx];
+                    });
+                    return obj;
+                });
+
+                const examensWorkbook = await readExcelFile(examensFile);
+                const examensSheet = examensWorkbook.Sheets[examensWorkbook.SheetNames[0]];
+                const examensRows = XLSX.utils.sheet_to_json(examensSheet);
+
+                const studentStage = stagesRows.find(s => String(s.CNE).trim().toUpperCase() === cne);
+                const studentExamen = examensRows.find(s => String(s.CNE).trim().toUpperCase() === cne);
+
+                if (!studentStage || !studentExamen) {
+                    showStatus('❌ Étudiant introuvable dans les fichiers fournis', 'error');
+                    showLoading(false);
+                    return;
+                }
+
+                const stages = ['pediatrie', 'chirurgie', 'medecine', 'gynecologie', 'centre_de_sante'];
+                const warnings = [];
+
+                stages.forEach(stage => {
+                    const cols = getStageColumns(newColumns, stage);
+                    if (cols.debut && cols.fin) {
+                        const start = new Date(studentStage[cols.debut]);
+                        const end = new Date(studentStage[cols.fin]);
+                        
+                        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+                            warnings.push(`${stage}: dates invalides`);
+                        } else {
+                            const duration = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
+                            if (duration < 63) {
+                                warnings.push(`${stage}: durée insuffisante (${duration} jours, minimum requis: 63 jours)`);
+                            }
+                        }
+                    }
+                });
+
+                if (warnings.length > 0) {
+                    const warningList = document.getElementById('warningList');
+                    const warningItems = document.getElementById('warningItems');
+                    warningItems.innerHTML = warnings.map(w => `<li>${w}</li>`).join('');
+                    warningList.classList.add('active');
+                }
+
+                const today = new Date();
+                const documentData = {
+                    date: formatDate(today),
+                    NOM: studentStage.NOM || '',
+                    PRENOM: studentStage.PRENOM || '',
+                    CNE: studentStage.CNE || '',
+                    
+                    Pediatrie_date_debut: formatDate(studentStage['Pediatrie - date debut']),
+                    Pediatrie_date_fin: formatDate(studentStage['Pediatrie - date fin']),
+                    Chirurgie_date_debut: formatDate(studentStage['Chirurgie - date debut']),
+                    Chirurgie_date_fin: formatDate(studentStage['Chirurgie - date fin']),
+                    Medecine_date_debut: formatDate(studentStage['Medecine - date debut']),
+                    Medecine_date_fin: formatDate(studentStage['Medecine - date fin']),
+                    Gynecologie_date_debut: formatDate(studentStage['Gynecologie - date debut']),
+                    Gynecologie_date_fin: formatDate(studentStage['Gynecologie - date fin']),
+                    Centre_de_Sante_date_debut: formatDate(studentStage['Centre de sante - date debut']),
+                    Centre_de_Sante_date_fin: formatDate(studentStage['Centre de sante - date fin']),
+                    
+                    Chirurgie: studentExamen['Chirurgie_Epreuve'] || '',
+                    CHir_1Session: studentExamen['Chirurgie_Session'] || '',
+                    CHir_1Note_ecrit: studentExamen['Chirurgie_Note ecrit'] || '',
+                    CHir_1Note_malade: studentExamen['Chirurgie_Note malade'] || '',
+                    
+                    Gynecologie: studentExamen['Gynécologie_Epreuve'] || '',
+                    Gyneco_1Session: studentExamen['Gynécologie_Session'] || '',
+                    Gyneco_1Note_ecrit: studentExamen['Gynécologie_Note ecrit'] || '',
+                    Gyneco_1Note_malade: studentExamen['Gynécologie_Note malade'] || '',
+                    
+                    Medecine: studentExamen['Médecine_Epreuve'] || '',
+                    MED_1Session: studentExamen['Médecine_Session'] || '',
+                    MED_1Note_ecrit: studentExamen['Médecine_Note ecrit'] || '',
+                    MED_1Note_malade: studentExamen['Médecine_Note malade'] || '',
+                    
+                    Pediatrie: studentExamen['Pédiatrie_Epreuve'] || '',
+                    PED_1Session: studentExamen['Pédiatrie_Session'] || '',
+                    PED_1Note_ecrit: studentExamen['Pédiatrie_Note ecrit'] || '',
+                    PED_1Note_malade: studentExamen['Pédiatrie_Note malade'] || ''
+                };
+
+                try {
+                    const response = await fetch(TEMPLATE_PATH);
+                    if (!response.ok) {
+                        throw new Error('Fichier modèle introuvable. Assurez-vous que le fichier "' + TEMPLATE_PATH + '" est dans le même dossier.');
+                    }
+                    
+                    const templateData = await response.arrayBuffer();
+                    const zip = new PizZip(templateData);
+                    const doc = new window.docxtemplater(zip, {
+                        paragraphLoop: true,
+                        linebreaks: true,
+                    });
+
+                    doc.render(documentData);
+
+                    const blob = doc.getZip().generate({
+                        type: 'blob',
+                        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    });
+
+                    const fileName = `Attestation_${documentData.NOM}_${documentData.PRENOM}_${documentData.CNE}.docx`;
+                    saveAs(blob, fileName);
+
+                    showLoading(false);
+                    showStatus(`✅ Attestation générée avec succès pour: ${documentData.NOM} ${documentData.PRENOM}`, 'success');
+                    
+                } catch (templateError) {
+                    showLoading(false);
+                    showStatus('❌ Erreur lors du traitement du modèle Word: ' + templateError.message, 'error');
+                    console.error('Erreur modèle:', templateError);
+                }
+
+            } catch (error) {
+                showLoading(false);
+                showStatus('❌ Erreur lors du traitement des fichiers: ' + error.message, 'error');
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+</html>

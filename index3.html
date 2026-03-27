@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attestation de Fin d'Études</title>
+    <title>Attestation de Fin d'Études | Générateur fiable</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/docxtemplater/3.42.3/docxtemplater.js"></script>
@@ -84,8 +84,11 @@
             padding: 32px;
             margin-bottom: 24px;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-               background: #eff6ff;
-            border: 1px solid #dbeafe;
+            transition: all 0.2s;
+        }
+
+        .card:first-of-type {
+            background: #eff6ff;
             border-left: 4px solid #3b82f6;
         }
 
@@ -192,7 +195,6 @@
             margin-right: 6px;
         }
 
-        
         .warning-box {
             display: none;
             background: #fef3c7;
@@ -317,11 +319,9 @@
             body {
                 padding: 20px 16px;
             }
-
             .header-title {
                 font-size: 32px;
             }
-
             .card {
                 padding: 24px;
             }
@@ -341,21 +341,18 @@
             <p class="header-subtitle">Génération automatique des attestations depuis fichier Excel</p>
         </div>
 
-        
-
         <div class="card">
             <h2 class="card-title">Informations de l'étudiant</h2>
             <div class="form-group">
                 <label class="form-label" for="cne">Code National de l'Étudiant (CNE)</label>
-                <input type="text" id="cne" class="form-input" placeholder="Entrez le CNE de l'étudiant">
+                <input type="text" id="cne" class="form-input" placeholder="Entrez le CNE de l'étudiant" autocomplete="off">
             </div>
         </div>
 
         <div class="card">
             <h2 class="card-title">Fichiers requis</h2>
-            
             <div class="form-group">
-                <label class="form-label">Fichier des Stages</label>
+                <label class="form-label">Fichier des Stages (Excel)</label>
                 <div class="file-upload">
                     <label for="stagesFile" class="file-upload-btn">
                         <span class="file-icon">📊</span>
@@ -365,9 +362,8 @@
                     <div id="stagesFileName" class="file-name"></div>
                 </div>
             </div>
-
             <div class="form-group">
-                <label class="form-label">Fichier des Examens</label>
+                <label class="form-label">Fichier des Examens (Excel)</label>
                 <div class="file-upload">
                     <label for="examensFile" class="file-upload-btn">
                         <span class="file-icon">📝</span>
@@ -409,6 +405,8 @@
             if (fileName) {
                 display.textContent = fileName;
                 display.classList.add('active');
+            } else {
+                display.classList.remove('active');
             }
         });
 
@@ -418,29 +416,82 @@
             if (fileName) {
                 display.textContent = fileName;
                 display.classList.add('active');
+            } else {
+                display.classList.remove('active');
             }
         });
 
         const TEMPLATE_PATH = 'Attestation Fin Etude - yassine.docx';
 
         function showStatus(message, type) {
-            const status = document.getElementById('status');
-            status.textContent = message;
-            status.className = 'status ' + type;
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = 'status ' + type;
         }
 
         function showLoading(show) {
             document.getElementById('loading').classList.toggle('active', show);
         }
 
+        // ----- FIXED DATE FORMATTING -----
+        // Robust date parser that handles Excel serial numbers and various string formats
+        function parseExcelDate(value) {
+            if (!value || value === '' || value === null) return null;
+            
+            // If it's a number (Excel serial date)
+            if (typeof value === 'number') {
+                // Excel serial date: days since 1900-01-01 (with leap year bug)
+                const excelEpoch = new Date(1899, 11, 30); // Dec 30 1899
+                const date = new Date(excelEpoch.getTime() + value * 86400000);
+                if (!isNaN(date.getTime())) return date;
+            }
+            
+            // If it's a string, try to parse
+            if (typeof value === 'string') {
+                // Try ISO format
+                let parsed = new Date(value);
+                if (!isNaN(parsed.getTime())) return parsed;
+                
+                // Try DD/MM/YYYY or DD-MM-YYYY (common in French Excel)
+                let parts = value.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+                if (parts) {
+                    let day = parseInt(parts[1], 10);
+                    let month = parseInt(parts[2], 10) - 1;
+                    let year = parseInt(parts[3], 10);
+                    parsed = new Date(year, month, day);
+                    if (!isNaN(parsed.getTime())) return parsed;
+                }
+                
+                // Try MM/DD/YYYY as fallback
+                parts = value.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+                if (parts) {
+                    let month = parseInt(parts[1], 10) - 1;
+                    let day = parseInt(parts[2], 10);
+                    let year = parseInt(parts[3], 10);
+                    parsed = new Date(year, month, day);
+                    if (!isNaN(parsed.getTime())) return parsed;
+                }
+            }
+            
+            return null;
+        }
+
         function formatDate(value) {
-            if (!value) return '';
-            const date = new Date(value);
-            if (isNaN(date.getTime())) return '';
-            const day = String(date.getDate()).padStart(2, '0');
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const year = date.getFullYear();
+            if (!value || value === '') return '';
+            const dateObj = parseExcelDate(value);
+            if (!dateObj || isNaN(dateObj.getTime())) return '';
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const year = dateObj.getFullYear();
             return `${day}/${month}/${year}`;
+        }
+
+        // Safe getter from object with fallback
+        function safeGet(obj, key, defaultValue = '') {
+            if (!obj) return defaultValue;
+            const val = obj[key];
+            if (val === undefined || val === null) return defaultValue;
+            return val;
         }
 
         function getStageColumns(columns, stageName) {
@@ -449,15 +500,14 @@
             let colFin = null;
             
             columns.forEach(col => {
-                const name = col.toLowerCase().replace(/\s+/g, '_');
-                if (name.includes(stageName) && name.includes('debut')) {
+                const colLower = col.toLowerCase().replace(/\s+/g, '_');
+                if (colLower.includes(stageName) && (colLower.includes('debut') || colLower.includes('start'))) {
                     colDebut = col;
                 }
-                if (name.includes(stageName) && name.includes('fin')) {
+                if (colLower.includes(stageName) && (colLower.includes('fin') || colLower.includes('end'))) {
                     colFin = col;
                 }
             });
-            
             return { debut: colDebut, fin: colFin };
         }
 
@@ -467,7 +517,7 @@
                 reader.onload = function(e) {
                     try {
                         const data = new Uint8Array(e.target.result);
-                        const workbook = XLSX.read(data, { type: 'array' });
+                        const workbook = XLSX.read(data, { type: 'array', cellDates: true, dateNF: 'dd/mm/yyyy' });
                         resolve(workbook);
                     } catch (error) {
                         reject(error);
@@ -487,7 +537,6 @@
                 showStatus('⚠️ Veuillez entrer le CNE de l\'étudiant', 'error');
                 return;
             }
-
             if (!stagesFile || !examensFile) {
                 showStatus('⚠️ Veuillez sélectionner tous les fichiers requis', 'error');
                 return;
@@ -495,153 +544,230 @@
 
             showLoading(true);
             document.getElementById('warningList').classList.remove('active');
-            document.getElementById('status').classList.remove('success', 'error');
+            document.getElementById('status').className = 'status';
+            document.getElementById('status').style.display = 'none';
 
             try {
+                // 1) Process stages file (multi-header)
                 const stagesWorkbook = await readExcelFile(stagesFile);
                 const stagesSheet = stagesWorkbook.Sheets[stagesWorkbook.SheetNames[0]];
-                const stagesData = XLSX.utils.sheet_to_json(stagesSheet, { header: 1 });
+                const rawStagesData = XLSX.utils.sheet_to_json(stagesSheet, { header: 1, defval: '' });
 
-                const headers = stagesData[0];
-                const subHeaders = stagesData[1];
+                if (!rawStagesData || rawStagesData.length < 3) {
+                    throw new Error('Fichier des stages : format incorrect (moins de 3 lignes)');
+                }
+
+                const headers = rawStagesData[0] || [];
+                const subHeaders = rawStagesData[1] || [];
                 const newColumns = [];
                 let mainTitle = null;
 
                 for (let i = 0; i < headers.length; i++) {
                     if (headers[i]) mainTitle = headers[i];
-                    if (mainTitle && subHeaders[i]) {
+                    if (mainTitle && subHeaders[i] && subHeaders[i].toString().trim() !== '') {
                         newColumns.push(`${mainTitle} - ${subHeaders[i]}`);
-                    } else if (subHeaders[i]) {
-                        newColumns.push(subHeaders[i]);
+                    } else if (subHeaders[i] && subHeaders[i].toString().trim() !== '') {
+                        newColumns.push(subHeaders[i].toString());
+                    } else if (headers[i] && headers[i].toString().trim() !== '') {
+                        newColumns.push(headers[i].toString());
+                    } else {
+                        newColumns.push(`col_${i}`);
                     }
                 }
 
-                const stagesRows = stagesData.slice(2).map(row => {
+                const stagesRows = rawStagesData.slice(2).map(row => {
                     const obj = {};
                     newColumns.forEach((col, idx) => {
-                        obj[col] = row[idx];
+                        let val = row[idx];
+                        if (val === undefined) val = '';
+                        obj[col] = val;
                     });
                     return obj;
                 });
 
+                // 2) Process examens file (simple header)
                 const examensWorkbook = await readExcelFile(examensFile);
                 const examensSheet = examensWorkbook.Sheets[examensWorkbook.SheetNames[0]];
-                const examensRows = XLSX.utils.sheet_to_json(examensSheet);
+                let examensRows = XLSX.utils.sheet_to_json(examensSheet, { defval: '' });
 
-                const studentStage = stagesRows.find(s => String(s.CNE).trim().toUpperCase() === cne);
-                const studentExamen = examensRows.find(s => String(s.CNE).trim().toUpperCase() === cne);
+                // Normalize examens CNE field
+                examensRows = examensRows.map(row => {
+                    const cneKey = Object.keys(row).find(k => k.toLowerCase() === 'cne');
+                    if (cneKey && cneKey !== 'CNE') {
+                        row.CNE = row[cneKey];
+                    }
+                    return row;
+                });
 
-                if (!studentStage || !studentExamen) {
-                    showStatus('❌ Étudiant introuvable dans les fichiers fournis', 'error');
+                // Find student
+                const studentStage = stagesRows.find(s => {
+                    const cneField = s.CNE !== undefined ? s.CNE : (s['CNE'] || '');
+                    return String(cneField).trim().toUpperCase() === cne;
+                });
+                
+                const studentExamen = examensRows.find(s => {
+                    const cneField = s.CNE !== undefined ? s.CNE : (s['CNE'] || '');
+                    return String(cneField).trim().toUpperCase() === cne;
+                });
+
+                if (!studentStage) {
+                    showStatus(`❌ CNE ${cne} introuvable dans le fichier des stages`, 'error');
+                    showLoading(false);
+                    return;
+                }
+                if (!studentExamen) {
+                    showStatus(`❌ CNE ${cne} introuvable dans le fichier des examens`, 'error');
                     showLoading(false);
                     return;
                 }
 
-                const stages = ['pediatrie', 'chirurgie', 'medecine', 'gynecologie', 'centre_de_sante'];
+                // Stages validation for warnings
+                const stagesList = ['pediatrie', 'chirurgie', 'medecine', 'gynecologie', 'centre_de_sante'];
                 const warnings = [];
 
-                stages.forEach(stage => {
+                stagesList.forEach(stage => {
                     const cols = getStageColumns(newColumns, stage);
                     if (cols.debut && cols.fin) {
-                        const start = new Date(studentStage[cols.debut]);
-                        const end = new Date(studentStage[cols.fin]);
+                        const rawStart = studentStage[cols.debut];
+                        const rawEnd = studentStage[cols.fin];
+                        const startDate = parseExcelDate(rawStart);
+                        const endDate = parseExcelDate(rawEnd);
                         
-                        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-                            warnings.push(`${stage}: dates invalides`);
+                        if (!startDate || !endDate) {
+                            warnings.push(`${stage}: dates manquantes ou invalides`);
                         } else {
-                            const duration = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
-                            if (duration < 63) {
-                                warnings.push(`${stage}: durée insuffisante (${duration} jours, minimum requis: 63 jours)`);
+                            const diffTime = Math.abs(endDate - startDate);
+                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                            if (diffDays < 63) {
+                                warnings.push(`${stage}: durée insuffisante (${diffDays} jours, requis: 63 jours)`);
                             }
                         }
+                    } else {
+                        warnings.push(`${stage}: colonnes dates non trouvées dans le fichier stages`);
                     }
                 });
 
                 if (warnings.length > 0) {
-                    const warningList = document.getElementById('warningList');
-                    const warningItems = document.getElementById('warningItems');
-                    warningItems.innerHTML = warnings.map(w => `<li>${w}</li>`).join('');
-                    warningList.classList.add('active');
+                    const warningListDiv = document.getElementById('warningList');
+                    const warningItemsUl = document.getElementById('warningItems');
+                    warningItemsUl.innerHTML = warnings.map(w => `<li>${w}</li>`).join('');
+                    warningListDiv.classList.add('active');
                 }
 
                 const today = new Date();
-                const documentData = {
-                    date: formatDate(today),
-                    NOM: studentStage.NOM || '',
-                    PRENOM: studentStage.PRENOM || '',
-                    CNE: studentStage.CNE || '',
-                    
-                    Pediatrie_date_debut: formatDate(studentStage['Pediatrie_-_date_debut']),
-                    Pediatrie_date_fin: formatDate(studentStage['Pediatrie_-_date_fin']),
-                    Chirurgie_date_debut: formatDate(studentStage['Chirurgie - date debut']),
-                    Chirurgie_date_fin: formatDate(studentStage['Chirurgie - date fin']),
-                    Medecine_date_debut: formatDate(studentStage['Medecine - date debut']),
-                    Medecine_date_fin: formatDate(studentStage['Medecine - date fin']),
-                    Gynecologie_date_debut: formatDate(studentStage['Gynecologie - date debut']),
-                    Gynecologie_date_fin: formatDate(studentStage['Gynecologie - date fin']),
-                    Centre_de_Sante_date_debut: formatDate(studentStage['Centre de sante - date debut']),
-                    Centre_de_Sante_date_fin: formatDate(studentStage['Centre de sante - date fin']),
-                    
-                    Chirurgie: studentExamen['Chirurgie_Epreuve'] || '',
-                    CHir_1Session: studentExamen['Chirurgie_Session'] || '',
-                    CHir_1Note_ecrit: studentExamen['Chirurgie_Note ecrit'] || '',
-                    CHir_1Note_malade: studentExamen['Chirurgie_Note malade'] || '',
-                    
-                    Gynecologie: studentExamen['Gynécologie_Epreuve'] || '',
-                    Gyneco_1Session: studentExamen['Gynécologie_Session'] || '',
-                    Gyneco_1Note_ecrit: studentExamen['Gynécologie_Note ecrit'] || '',
-                    Gyneco_1Note_malade: studentExamen['Gynécologie_Note malade'] || '',
-                    
-                    Medecine: studentExamen['Médecine_Epreuve'] || '',
-                    MED_1Session: studentExamen['Médecine_Session'] || '',
-                    MED_1Note_ecrit: studentExamen['Médecine_Note ecrit'] || '',
-                    MED_1Note_malade: studentExamen['Médecine_Note malade'] || '',
-                    
-                    Pediatrie: studentExamen['Pédiatrie_Epreuve'] || '',
-                    PED_1Session: studentExamen['Pédiatrie_Session'] || '',
-                    PED_1Note_ecrit: studentExamen['Pédiatrie_Note ecrit'] || '',
-                    PED_1Note_malade: studentExamen['Pédiatrie_Note malade'] || ''
-                };
 
-                try {
-                    const response = await fetch(TEMPLATE_PATH);
-                    if (!response.ok) {
-                        throw new Error('Fichier modèle introuvable. Assurez-vous que le fichier "' + TEMPLATE_PATH + '" est dans le même dossier.');
+                // Helper to safely get formatted date from stage object using multiple possible column names
+                function getStageDate(stageKey, suffix) {
+                    // Try various naming conventions
+                    const possibleNames = [
+                        `${stageKey} - ${suffix}`,
+                        `${stageKey} ${suffix}`,
+                        `${stageKey}_${suffix}`,
+                        `${stageKey} ${suffix === 'date debut' ? 'date_debut' : 'date_fin'}`,
+                        `${stageKey} ${suffix === 'date debut' ? 'debut' : 'fin'}`
+                    ];
+                    if (stageKey === 'Centre de sante') {
+                        possibleNames.push(`Centre_de_Sante - ${suffix === 'date debut' ? 'date_debut' : 'date_fin'}`);
+                        possibleNames.push(`Centre_de_Sante_${suffix === 'date debut' ? 'date_debut' : 'date_fin'}`);
                     }
-                    
-                    const templateData = await response.arrayBuffer();
-                    const zip = new PizZip(templateData);
-                    const doc = new window.docxtemplater(zip, {
-                        paragraphLoop: true,
-                        linebreaks: true,
-                    });
-
-                    doc.render(documentData);
-
-                    const blob = doc.getZip().generate({
-                        type: 'blob',
-                        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                    });
-
-                    const fileName = `Attestation_${documentData.NOM}_${documentData.PRENOM}_${documentData.CNE}.docx`;
-                    saveAs(blob, fileName);
-
-                    showLoading(false);
-                    showStatus(`✅ Attestation générée avec succès pour: ${documentData.NOM} ${documentData.PRENOM}`, 'success');
-                    
-                } catch (templateError) {
-                    showLoading(false);
-                    showStatus('❌ Erreur lors du traitement du modèle Word: ' + templateError.message, 'error');
-                    console.error('Erreur modèle:', templateError);
+                    for (let name of possibleNames) {
+                        if (studentStage[name] !== undefined && studentStage[name] !== null && studentStage[name] !== '') {
+                            return formatDate(studentStage[name]);
+                        }
+                    }
+                    return '';
                 }
 
+                // Build documentData with robust date formatting (FIX for first table dates)
+                const documentData = {
+                    date: formatDate(today),
+                    NOM: safeGet(studentStage, 'NOM', ''),
+                    PRENOM: safeGet(studentStage, 'PRENOM', ''),
+                    CNE: safeGet(studentStage, 'CNE', cne),
+                    
+                    // PEDIATRIE
+                    Pediatrie_date_debut: getStageDate('Pediatrie', 'date debut'),
+                    Pediatrie_date_fin: getStageDate('Pediatrie', 'date fin'),
+                    // CHIRURGIE
+                    Chirurgie_date_debut: getStageDate('Chirurgie', 'date debut'),
+                    Chirurgie_date_fin: getStageDate('Chirurgie', 'date fin'),
+                    // MEDECINE
+                    Medecine_date_debut: getStageDate('Medecine', 'date debut'),
+                    Medecine_date_fin: getStageDate('Medecine', 'date fin'),
+                    // GYNECOLOGIE
+                    Gynecologie_date_debut: getStageDate('Gynecologie', 'date debut'),
+                    Gynecologie_date_fin: getStageDate('Gynecologie', 'date fin'),
+                    // CENTRE DE SANTE
+                    Centre_de_Sante_date_debut: getStageDate('Centre de sante', 'date debut'),
+                    Centre_de_Sante_date_fin: getStageDate('Centre de sante', 'date fin'),
+                    
+                    // Examens data with safe access
+                    Chirurgie: safeGet(studentExamen, 'Chirurgie_Epreuve', ''),
+                    CHir_1Session: safeGet(studentExamen, 'Chirurgie_Session', ''),
+                    CHir_1Note_ecrit: safeGet(studentExamen, 'Chirurgie_Note ecrit', ''),
+                    CHir_1Note_malade: safeGet(studentExamen, 'Chirurgie_Note malade', ''),
+                    
+                    Gynecologie: safeGet(studentExamen, 'Gynécologie_Epreuve', ''),
+                    Gyneco_1Session: safeGet(studentExamen, 'Gynécologie_Session', ''),
+                    Gyneco_1Note_ecrit: safeGet(studentExamen, 'Gynécologie_Note ecrit', ''),
+                    Gyneco_1Note_malade: safeGet(studentExamen, 'Gynécologie_Note malade', ''),
+                    
+                    Medecine: safeGet(studentExamen, 'Médecine_Epreuve', ''),
+                    MED_1Session: safeGet(studentExamen, 'Médecine_Session', ''),
+                    MED_1Note_ecrit: safeGet(studentExamen, 'Médecine_Note ecrit', ''),
+                    MED_1Note_malade: safeGet(studentExamen, 'Médecine_Note malade', ''),
+                    
+                    Pediatrie: safeGet(studentExamen, 'Pédiatrie_Epreuve', ''),
+                    PED_1Session: safeGet(studentExamen, 'Pédiatrie_Session', ''),
+                    PED_1Note_ecrit: safeGet(studentExamen, 'Pédiatrie_Note ecrit', ''),
+                    PED_1Note_malade: safeGet(studentExamen, 'Pédiatrie_Note malade', '')
+                };
+
+                // Additional fallback: ensure if any date field is empty but raw Excel had serial number, we already parsed via formatDate
+                // Log verification (optional but ensures debug)
+                console.log('Dates after formatting:', {
+                    Pediatrie: documentData.Pediatrie_date_debut,
+                    Chirurgie: documentData.Chirurgie_date_debut,
+                    Medecine: documentData.Medecine_date_debut,
+                    Gynecologie: documentData.Gynecologie_date_debut,
+                    Centre: documentData.Centre_de_Sante_date_debut
+                });
+
+                // 3) Load template and generate document
+                const response = await fetch(TEMPLATE_PATH);
+                if (!response.ok) {
+                    throw new Error(`Modèle introuvable: "${TEMPLATE_PATH}". Vérifiez que le fichier est dans le même dossier.`);
+                }
+                
+                const templateData = await response.arrayBuffer();
+                const zip = new PizZip(templateData);
+                const doc = new window.docxtemplater(zip, {
+                    paragraphLoop: true,
+                    linebreaks: true,
+                    nullGetter: function() { return ''; }
+                });
+
+                doc.render(documentData);
+
+                const blob = doc.getZip().generate({
+                    type: 'blob',
+                    mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                });
+
+                const safeName = (documentData.NOM || 'etudiant').replace(/[^a-z0-9]/gi, '_');
+                const safePrenom = (documentData.PRENOM || '').replace(/[^a-z0-9]/gi, '_');
+                const fileName = `Attestation_${safeName}_${safePrenom}_${documentData.CNE}.docx`;
+                saveAs(blob, fileName);
+
+                showLoading(false);
+                showStatus(`✅ Attestation générée avec succès pour: ${documentData.NOM} ${documentData.PRENOM} (CNE: ${documentData.CNE})`, 'success');
+                
             } catch (error) {
                 showLoading(false);
-                showStatus('❌ Erreur lors du traitement des fichiers: ' + error.message, 'error');
-                console.error(error);
+                console.error('Erreur complète:', error);
+                showStatus(`❌ Erreur: ${error.message || 'Erreur inattendue lors de la génération'}`, 'error');
             }
         }
     </script>
 </body>
-
 </html>
